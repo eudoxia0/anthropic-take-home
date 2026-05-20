@@ -28,7 +28,7 @@ e.g.:
 uv run main.py "Who is the current Secretary-General of NATO?"
 ```
 
-The result will be rendered as an HTML file in the `logs/` directory.
+This will print the answer to the terminal, but the entire transcript will be rendered as an HTML file in the `logs/` directory.
 
 To run the eval suite, run:
 
