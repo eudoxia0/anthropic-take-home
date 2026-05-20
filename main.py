@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import random
@@ -33,7 +34,7 @@ def search_wikipedia(query: str) -> list[SearchResult]:
             key=page["key"],
             title=page["title"],
             excerpt=page["excerpt"],
-            description=page.get("description", ""),
+            description=page.get("description") or "",
         )
         for page in data["pages"]
     ]
@@ -209,22 +210,98 @@ def answer_question(question: str) -> QAResult:
     return QAResult(question=question, answer=answer, tool_calls=tool_calls)
 
 
+def _esc(s: str) -> str:
+    return html.escape(s)
+
+
 def _write_log(result: QAResult) -> None:
     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     rand = random.randint(0, 999999)
-    filename = f"{timestamp}_{rand}.txt"
-    sep = "\n" + "=" * 72 + "\n\n"
-    parts = [f"[question]\n\n{result.question}"]
+    filename = f"{timestamp}_{rand}.html"
+
+    tool_calls_html = ""
     for tc in result.tool_calls:
+        output_text = tc.output_text
         if isinstance(tc, SearchCall):
-            parts.append(f"[search_wikipedia] query={tc.query!r}\n\n{tc.output_text}")
+            input_str = f"query: {tc.query}"
+            results_html = ""
+            for sr in tc.results:
+                results_html += (
+                    f'<div class="search-result">'
+                    f'<div class="search-result-header">'
+                    f'<strong>{_esc(sr.title)}</strong>'
+                    f'<span class="search-result-key">{_esc(sr.key)}</span>'
+                    f'</div>'
+                    f'<div class="search-result-desc">{_esc(sr.description)}</div>'
+                    f'<pre class="search-result-excerpt">{_esc(sr.excerpt)}</pre>'
+                    f'</div>'
+                )
+            output_html = results_html
         elif isinstance(tc, RetrievePageCall):
-            parts.append(f"[retrieve_page] key={tc.key!r}\n\n{tc.output_text}")
-    parts.append(f"[answer]\n\n{result.answer}")
+            input_str = f"key: {tc.key}"
+            output_html = f'<pre class="tool-output">{_esc(output_text)}</pre>'
+        tool_calls_html += (
+            f'<div class="tool-call">'
+            f'<strong>{_esc(tc.name)}</strong>'
+            f'<pre class="tool-input">{_esc(input_str)}</pre>'
+            f'<details><summary class="tool-output-toggle">Show output ({len(output_text)} chars)</summary>'
+            f'{output_html}</details></div>'
+        )
+
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QA Log &mdash; {_esc(result.question[:80])}</title>
+<style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f3f4f6; color: #111827; }}
+    .container {{ max-width: 900px; margin: 0 auto; }}
+    h1 {{ margin-bottom: 4px; }}
+    .subtitle {{ color: #6b7280; margin-bottom: 24px; }}
+    .section {{ background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 16px 24px; margin-bottom: 16px; }}
+    .section h2 {{ margin-top: 0; }}
+    .question {{ font-size: 18px; }}
+    .answer {{ white-space: pre-wrap; }}
+    .tool-call {{ margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; }}
+    .tool-input {{ background: #f9fafb; padding: 8px; border-radius: 4px; margin: 6px 0; overflow-x: auto; font-size: 12px; }}
+    .tool-output-toggle {{ cursor: pointer; color: #6b7280; font-size: 13px; }}
+    .tool-output {{ background: #f9fafb; padding: 8px; border-radius: 4px; margin: 6px 0; overflow-x: auto; font-size: 11px; max-height: 400px; overflow-y: auto; }}
+    .search-result {{ border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin: 6px 0; background: #fff; }}
+    .search-result-header {{ display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }}
+    .search-result-key {{ font-size: 12px; color: #9ca3af; font-family: monospace; }}
+    .search-result-desc {{ font-size: 13px; color: #6b7280; margin-bottom: 6px; }}
+    .search-result-excerpt {{ background: #f9fafb; padding: 8px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; overflow-y: auto; }}
+    .no-tools {{ color: #9ca3af; }}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>QA Log</h1>
+    <div class="subtitle">Generated {generated}</div>
+
+    <div class="section">
+        <h2>Question</h2>
+        <div class="question">{_esc(result.question)}</div>
+    </div>
+
+    <div class="section">
+        <h2>Tool Calls ({len(result.tool_calls)})</h2>
+        {tool_calls_html if tool_calls_html else '<p class="no-tools">No tool calls made.</p>'}
+    </div>
+
+    <div class="section">
+        <h2>Answer</h2>
+        <div class="answer">{_esc(result.answer)}</div>
+    </div>
+</div>
+</body>
+</html>"""
+
     with open(os.path.join(log_dir, filename), "w") as f:
-        f.write(sep.join(parts) + "\n")
+        f.write(page)
 
 
 def main():

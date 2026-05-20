@@ -72,8 +72,6 @@ def judge(qa: QAResult) -> Judgment:
     tool_call_text = ""
     for tc in qa.tool_calls:
         output = tc.output_text
-        if len(output) > 8000:
-            output = output[:8000] + "\n... [truncated]"
         if isinstance(tc, SearchCall):
             tool_call_text += f"Tool: search_wikipedia\nQuery: {tc.query}\nOutput:\n{output}\n\n"
         elif isinstance(tc, RetrievePageCall):
@@ -137,19 +135,30 @@ def generate_html(results: list[EvalResult]) -> str:
         tool_calls_html = ""
         for tc in r.qa.tool_calls:
             output_text = tc.output_text
-            output_preview = output_text
-            if len(output_preview) > 2000:
-                output_preview = output_preview[:2000] + "\n... [truncated in display]"
             if isinstance(tc, SearchCall):
                 input_str = f"query: {tc.query}"
+                results_html = ""
+                for sr in tc.results:
+                    results_html += (
+                        f'<div class="search-result">'
+                        f'<div class="search-result-header">'
+                        f'<strong>{_esc(sr.title)}</strong>'
+                        f'<span class="search-result-key">{_esc(sr.key)}</span>'
+                        f'</div>'
+                        f'<div class="search-result-desc">{_esc(sr.description)}</div>'
+                        f'<pre class="search-result-excerpt">{_esc(sr.excerpt)}</pre>'
+                        f'</div>'
+                    )
+                output_html = results_html
             elif isinstance(tc, RetrievePageCall):
                 input_str = f"key: {tc.key}"
+                output_html = f'<pre class="tool-output">{_esc(output_text)}</pre>'
             tool_calls_html += (
                 f'<div class="tool-call">'
                 f'<strong>{_esc(tc.name)}</strong>'
                 f'<pre class="tool-input">{_esc(input_str)}</pre>'
                 f'<details><summary class="tool-output-toggle">Show output ({len(output_text)} chars)</summary>'
-                f'<pre class="tool-output">{_esc(output_preview)}</pre></details></div>'
+                f'{output_html}</details></div>'
             )
 
         judge_html = ""
@@ -232,6 +241,11 @@ def generate_html(results: list[EvalResult]) -> str:
     .tool-input {{ background: #f9fafb; padding: 8px; border-radius: 4px; margin: 6px 0; overflow-x: auto; font-size: 12px; }}
     .tool-output-toggle {{ cursor: pointer; color: #6b7280; font-size: 13px; }}
     .tool-output {{ background: #f9fafb; padding: 8px; border-radius: 4px; margin: 6px 0; overflow-x: auto; font-size: 11px; max-height: 400px; overflow-y: auto; }}
+    .search-result {{ border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin: 6px 0; background: #fff; }}
+    .search-result-header {{ display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }}
+    .search-result-key {{ font-size: 12px; color: #9ca3af; font-family: monospace; }}
+    .search-result-desc {{ font-size: 13px; color: #6b7280; margin-bottom: 6px; }}
+    .search-result-excerpt {{ background: #f9fafb; padding: 8px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; overflow-y: auto; }}
     .judge-criterion {{ margin-bottom: 8px; }}
     .judge-reasoning {{ color: #6b7280; font-size: 13px; }}
     .no-tools {{ color: #9ca3af; }}
