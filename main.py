@@ -40,7 +40,12 @@ def retrieve_page(key: str) -> str:
     """
     Retrieve the source text, in Wikitext, of the given Wikipedia page.
     """
-    raise NotImplementedError()
+    response = requests.get(
+        "https://en.wikipedia.org/w/rest.php/v1/page/" + key,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data["source"]
 
 
 def main():
