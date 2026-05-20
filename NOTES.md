@@ -13,3 +13,4 @@
     - I'm wrong, it was using more updated information than the infobox.
       - Updated system prompt accordingly.
 - Better reporting so I can interpret logs/QA results.
+- Model is lazy: getting answers from search result description field
