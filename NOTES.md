@@ -14,3 +14,5 @@
       - Updated system prompt accordingly.
 - Better reporting so I can interpret logs/QA results.
 - Model is lazy: getting answers from search result description field
+- Models should be aware of the current date.
+- No False Positives: 3/5 The claim about 14 million in the city proper is supported by sources. However, the claim about the Greater Tokyo Area having 'around 37 million' and being 'the world's most populous metropolitan area' is not supported by the retrieved sources, which only mention partial population figures for some cities in the Greater Tokyo Area.
