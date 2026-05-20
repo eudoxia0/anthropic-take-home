@@ -65,9 +65,9 @@ tools.
 My approach to writing the prompt was: start with something very minimal,
 iterate based on results. Short prompts are good because the longer the prompt,
 the harder it is to coordinate it and ensure it's not accidentally repetitive,
-contradictory etc. I try to act like I'm addressing a smart, literate human, and
-not a machine with cheat codes, i.e. no "you're a 150IQ genius and if you fail
-my family dies".
+contradictory etc. I try to act like I'm addressing a smart, literate human, who
+wants clear, unambiguous instructions, and not a machine with cheat codes,
+i.e. no "you're a 150IQ genius and if you fail my family dies".
 
 ### Dimensions of Quality
 
