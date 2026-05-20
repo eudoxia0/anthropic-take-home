@@ -164,4 +164,15 @@ I would make a few tiny changes to the eval framework:
 
 ### AI Usage
 
+Claude Code transcripts are in the `claude-code/` directory.
+
+I used Claude Code both to implement valuable quality-of-life features (like
+HTML rendering) in less time, and to make focused, narrow changes
+(e.g. implement the body of a function where I've written the signature).
+
 ### Time Taken
+
+I read the README a few times, then went out to get lunch while thinking about
+it in the back of my head. That was about 30m. I allocated 2h to write all the
+code end-to-end. I had mostly finished by 1h40m and used the last 20m to
+experiment some more with the prompt. Writing the rationale took about 40m.
