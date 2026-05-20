@@ -8,21 +8,21 @@ from datetime import datetime, timezone
 import anthropic
 from dotenv import load_dotenv
 
-from main import QAResult, SearchCall, RetrievePageCall, answer_question
+from main import QAResult, RetrievePageCall, SearchCall, answer_question
 
 JUDGE_MODEL = "claude-sonnet-4-6"
 
 EVAL_QUESTIONS = [
-    "What is the capital of France?",
-    "Who wrote Crime and Punishment?",
+    # Single source.
+    "Who is the current Secretary-General of NATO?",
+    "What was the most recent film to win the Palme d'Or?",
     "What is the population of Tokyo?",
     "When was the Great Wall of China built?",
-    "What programming language was created by Guido van Rossum?",
-    "What is the boiling point of water at sea level?",
-    "Who painted the Mona Lisa?",
-    "What is the largest planet in our solar system?",
-    "When did the Berlin Wall fall?",
-    "What is the chemical formula for table salt?",
+    "How many moons does Saturn currently have confirmed?",
+    # Multiple source.
+    "What is the population of the city where the 2028 Summer Olympics will be held?",
+    "What is the capital of the country whose football team won the most recent FIFA World Cup?",
+    "What is the elevation of the highest peak in the country that currently chairs the G20?",
 ]
 
 JUDGE_SYSTEM_PROMPT = """\
@@ -73,9 +73,13 @@ def judge(qa: QAResult) -> Judgment:
     for tc in qa.tool_calls:
         output = tc.output_text
         if isinstance(tc, SearchCall):
-            tool_call_text += f"Tool: search_wikipedia\nQuery: {tc.query}\nOutput:\n{output}\n\n"
+            tool_call_text += (
+                f"Tool: search_wikipedia\nQuery: {tc.query}\nOutput:\n{output}\n\n"
+            )
         elif isinstance(tc, RetrievePageCall):
-            tool_call_text += f"Tool: retrieve_page\nKey: {tc.key}\nOutput:\n{output}\n\n"
+            tool_call_text += (
+                f"Tool: retrieve_page\nKey: {tc.key}\nOutput:\n{output}\n\n"
+            )
 
     user_prompt = (
         f"## Question\n\n{qa.question}\n\n"
@@ -142,12 +146,12 @@ def generate_html(results: list[EvalResult]) -> str:
                     results_html += (
                         f'<div class="search-result">'
                         f'<div class="search-result-header">'
-                        f'<strong>{_esc(sr.title)}</strong>'
+                        f"<strong>{_esc(sr.title)}</strong>"
                         f'<span class="search-result-key">{_esc(sr.key)}</span>'
-                        f'</div>'
+                        f"</div>"
                         f'<div class="search-result-desc">{_esc(sr.description)}</div>'
                         f'<pre class="search-result-excerpt">{_esc(sr.excerpt)}</pre>'
-                        f'</div>'
+                        f"</div>"
                     )
                 output_html = results_html
             elif isinstance(tc, RetrievePageCall):
@@ -155,10 +159,10 @@ def generate_html(results: list[EvalResult]) -> str:
                 output_html = f'<pre class="tool-output">{_esc(output_text)}</pre>'
             tool_calls_html += (
                 f'<div class="tool-call">'
-                f'<strong>{_esc(tc.name)}</strong>'
+                f"<strong>{_esc(tc.name)}</strong>"
                 f'<pre class="tool-input">{_esc(input_str)}</pre>'
                 f'<details><summary class="tool-output-toggle">Show output ({len(output_text)} chars)</summary>'
-                f'{output_html}</details></div>'
+                f"{output_html}</details></div>"
             )
 
         judge_html = ""
