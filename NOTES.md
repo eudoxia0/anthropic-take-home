@@ -5,3 +5,6 @@
     - Non-contradiction: claims must be consistent with sources.
   - Style?
   - Length?
+  - Opus for QA, Sonnet for eval
+    - Generation is more cognitively demanding than eval
+    - Less chance of the model approving its own outputs due to familiarity
