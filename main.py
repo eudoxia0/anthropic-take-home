@@ -322,6 +322,12 @@ async def main():
     load_dotenv()
     result = await answer_question(sys.argv[1])
     _write_log(result)
+    for tc in result.tool_calls:
+        if isinstance(tc, SearchCall):
+            print(f"Search: {tc.query}")
+        elif isinstance(tc, RetrievePageCall):
+            print(f"Retrieve Page: {tc.key}")
+    print("---")
     print(result.answer)
 
 
