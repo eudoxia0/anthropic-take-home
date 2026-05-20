@@ -50,7 +50,13 @@ def retrieve_page(key: str) -> str:
     return data["source"]
 
 
-SYSTEM_PROMPT: str = """
+def _today() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+SYSTEM_PROMPT_TEMPLATE: str = """
+Today's date is {today}.
+
 Good morning Claude. Your task is to be the core of a question-answering
 system. You have a couple tools at your disposal, which are you encouraged to
 use:
@@ -180,7 +186,7 @@ def answer_question(question: str) -> QAResult:
     response = client.messages.create(
         model=MODEL,
         max_tokens=4096,
-        system=SYSTEM_PROMPT,
+        system=SYSTEM_PROMPT_TEMPLATE.format(today=_today()),
         tools=TOOLS,  # type: ignore
         messages=messages,  # type: ignore
     )
@@ -205,7 +211,7 @@ def answer_question(question: str) -> QAResult:
         response = client.messages.create(
             model=MODEL,
             max_tokens=4096,
-            system=SYSTEM_PROMPT,
+            system=SYSTEM_PROMPT_TEMPLATE.format(today=_today()),
             tools=TOOLS,  # type: ignore
             messages=messages,  # type: ignore
         )

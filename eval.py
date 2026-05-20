@@ -25,7 +25,9 @@ EVAL_QUESTIONS = [
     "What is the elevation of the highest peak in the country that currently chairs the G20?",
 ]
 
-JUDGE_SYSTEM_PROMPT = """\
+JUDGE_SYSTEM_PROMPT_TEMPLATE = """\
+Today's date is {today}.
+
 You are an evaluation judge for a question-answering system that uses Wikipedia \
 as its source. You will be given:
 
@@ -91,7 +93,7 @@ def judge(qa: QAResult) -> Judgment:
     response = client.messages.create(
         model=JUDGE_MODEL,
         max_tokens=1024,
-        system=JUDGE_SYSTEM_PROMPT,
+        system=JUDGE_SYSTEM_PROMPT_TEMPLATE.format(today=datetime.now(timezone.utc).strftime("%Y-%m-%d")),
         messages=[{"role": "user", "content": user_prompt}],
     )
 
