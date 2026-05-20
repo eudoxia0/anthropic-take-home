@@ -2,7 +2,7 @@ import json
 import os
 import random
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import anthropic
@@ -14,10 +14,6 @@ WIKI_HEADERS = {"User-Agent": "anthropic-take-home/0.1 (QA bot)"}
 
 @dataclass(frozen=True)
 class SearchResult:
-    """
-    Represents a search result from the MediaWiki API.
-    """
-
     key: str
     title: str
     excerpt: str
@@ -25,9 +21,6 @@ class SearchResult:
 
 
 def search_wikipedia(query: str) -> list[SearchResult]:
-    """
-    Search Wikipedia for the given query, and return the list of search results.
-    """
     response = requests.get(
         "https://en.wikipedia.org/w/rest.php/v1/search/page",
         params={"q": query, "limit": 10},
@@ -47,9 +40,6 @@ def search_wikipedia(query: str) -> list[SearchResult]:
 
 
 def retrieve_page(key: str) -> str:
-    """
-    Retrieve the source text, in Wikitext, of the given Wikipedia page.
-    """
     response = requests.get(
         "https://en.wikipedia.org/w/rest.php/v1/page/" + key,
         headers=WIKI_HEADERS,
@@ -116,10 +106,18 @@ TOOLS = [
 ]
 
 
-def _execute_tool(name: str, input: dict, log: list[str]) -> str:
-    if name == "search_wikipedia":
-        results = search_wikipedia(input["query"])
-        output = json.dumps(
+@dataclass(frozen=True)
+class SearchCall:
+    query: str
+    results: list[SearchResult]
+
+    @property
+    def name(self) -> str:
+        return "search_wikipedia"
+
+    @property
+    def output_text(self) -> str:
+        return json.dumps(
             [
                 {
                     "key": r.key,
@@ -127,51 +125,52 @@ def _execute_tool(name: str, input: dict, log: list[str]) -> str:
                     "excerpt": r.excerpt,
                     "description": r.description,
                 }
-                for r in results
+                for r in self.results
             ]
         )
-        lines = [
-            f"[search_wikipedia] query={input['query']!r}",
-            "",
-            output,
-        ]
-        log.append("\n".join(lines))
-        return output
+
+
+@dataclass(frozen=True)
+class RetrievePageCall:
+    key: str
+    source: str
+
+    @property
+    def name(self) -> str:
+        return "retrieve_page"
+
+    @property
+    def output_text(self) -> str:
+        return self.source
+
+
+ToolCall = SearchCall | RetrievePageCall
+
+
+@dataclass
+class QAResult:
+    question: str
+    answer: str
+    tool_calls: list[ToolCall] = field(default_factory=list)
+
+
+def _execute_tool(name: str, input: dict) -> tuple[ToolCall, str]:
+    if name == "search_wikipedia":
+        results = search_wikipedia(input["query"])
+        call = SearchCall(query=input["query"], results=results)
+        return call, call.output_text
     elif name == "retrieve_page":
-        result = retrieve_page(input["key"])
-        lines = [
-            f"[retrieve_page] key={input['key']!r}",
-            "",
-            result,
-        ]
-        log.append("\n".join(lines))
-        return result
+        source = retrieve_page(input["key"])
+        call = RetrievePageCall(key=input["key"], source=source)
+        return call, call.output_text
     else:
-        return json.dumps({"error": f"Unknown tool: {name}"})
+        raise ValueError(f"Unknown tool: {name}")
 
 
-_LOG_SEPARATOR = "\n" + "=" * 72 + "\n\n"
-
-
-def _write_log(log: list[str]) -> None:
-    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    rand = random.randint(0, 999999)
-    filename = f"{timestamp}_{rand}.txt"
-    with open(os.path.join(log_dir, filename), "w") as f:
-        f.write(_LOG_SEPARATOR.join(log) + "\n")
-
-
-def answer_question(question: str) -> str:
-    """
-    Entrypoint to the QA system: takes a question, invokes the model to
-    synthesize an answer, optionally querying Wikipedia, and returns the final
-    answer.
-    """
-    log: list[str] = [f"[question]\n\n{question}"]
+def answer_question(question: str) -> QAResult:
     client = anthropic.Anthropic()
     messages = [{"role": "user", "content": question}]
+    tool_calls: list[ToolCall] = []
 
     response = client.messages.create(
         model=MODEL,
@@ -181,18 +180,17 @@ def answer_question(question: str) -> str:
         messages=messages,  # type: ignore
     )
 
-    # Loop: handle tool use until we get a final text response.
     while response.stop_reason == "tool_use":
-        # Collect all tool use blocks and execute them.
         tool_results = []
         for block in response.content:
             if block.type == "tool_use":
-                result = _execute_tool(block.name, block.input, log)
+                call, output = _execute_tool(block.name, block.input)
+                tool_calls.append(call)
                 tool_results.append(
                     {
                         "type": "tool_result",
                         "tool_use_id": block.id,
-                        "content": result,
+                        "content": output,
                     }
                 )
 
@@ -207,16 +205,33 @@ def answer_question(question: str) -> str:
             messages=messages,  # type: ignore
         )
 
-    # Extract the final text.
     answer = "".join(block.text for block in response.content if block.type == "text")
-    log.append(f"[answer]\n\n{answer}")
-    _write_log(log)
-    return answer
+    return QAResult(question=question, answer=answer, tool_calls=tool_calls)
+
+
+def _write_log(result: QAResult) -> None:
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    rand = random.randint(0, 999999)
+    filename = f"{timestamp}_{rand}.txt"
+    sep = "\n" + "=" * 72 + "\n\n"
+    parts = [f"[question]\n\n{result.question}"]
+    for tc in result.tool_calls:
+        if isinstance(tc, SearchCall):
+            parts.append(f"[search_wikipedia] query={tc.query!r}\n\n{tc.output_text}")
+        elif isinstance(tc, RetrievePageCall):
+            parts.append(f"[retrieve_page] key={tc.key!r}\n\n{tc.output_text}")
+    parts.append(f"[answer]\n\n{result.answer}")
+    with open(os.path.join(log_dir, filename), "w") as f:
+        f.write(sep.join(parts) + "\n")
 
 
 def main():
     load_dotenv()
-    print(answer_question(sys.argv[1]))
+    result = answer_question(sys.argv[1])
+    _write_log(result)
+    print(result.answer)
 
 
 if __name__ == "__main__":
