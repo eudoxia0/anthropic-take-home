@@ -8,3 +8,5 @@
   - Opus for QA, Sonnet for eval
     - Generation is more cognitively demanding than eval
     - Less chance of the model approving its own outputs due to familiarity
+- Noticed an error with this question: What is the current population of Reykjavík according to its Wikipedia article?
+  - Not grounded in sources.
