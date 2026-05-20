@@ -317,7 +317,7 @@ async def run_eval(question: str, index: int, total: int) -> EvalResult:
     return EvalResult(qa=qa, judgment=j)
 
 
-MAX_CONCURRENCY = 2
+MAX_CONCURRENCY = 1
 
 
 async def main():
