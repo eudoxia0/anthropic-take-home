@@ -71,6 +71,19 @@ i.e. no "you're a 150IQ genius and if you fail my family dies".
 
 ### Dimensions of Quality
 
+The first dimension that came to mind was **accuracy**, which I broke down into
+false positives, false negatives, and consistency:
+
+- **No false positives:** positive claims in the answer must be grounded in
+  sources.
+- **No false negatives:** answers should not ignore key facts in the sources.
+- **Consistency:** the answer must not contradict the sources, i.e., an answer
+can't assert `P` if the sources say `not P`, and vice-versa.
+
+After asking Claude for other dimensions I may have overlooked, I got the idea
+to also address **relevance**, i.e. whether the answer actually answers the
+question.
+
 ### Evaluation Lessons
 
 ### Key Iterations
