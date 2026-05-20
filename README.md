@@ -166,9 +166,11 @@ I would make a few tiny changes to the eval framework:
 
 Claude Code transcripts are in the `claude-code/` directory.
 
-I used Claude Code both to implement valuable quality-of-life features (like
-HTML rendering) in less time, and to make focused, narrow changes
-(e.g. implement the body of a function where I've written the signature).
+Claude conversation links:
+
+- <https://claude.ai/share/2b315ac6-e4b8-49af-b3c3-55cd515f625b>
+- <https://claude.ai/share/7cf9110f-9621-4ba6-a82e-ffd1b119ae88>
+- <https://claude.ai/share/d9466839-c5eb-47af-9f94-f5aca41a63f6>
 
 ### Time Taken
 
