@@ -22,9 +22,7 @@ class SearchResult:
     description: str
 
 
-async def search_wikipedia(
-    http: httpx.AsyncClient, query: str
-) -> list[SearchResult]:
+async def search_wikipedia(http: httpx.AsyncClient, query: str) -> list[SearchResult]:
     response = await http.get(
         "https://en.wikipedia.org/w/rest.php/v1/search/page",
         params={"q": query, "limit": 10},
@@ -61,30 +59,26 @@ SYSTEM_PROMPT_TEMPLATE: str = """
 Today's date is {today}.
 
 Good morning Claude. Your task is to be the core of a question-answering
-system. You have a couple tools at your disposal, which are you encouraged to
+system. You have a couple tools at your disposal, which are you required to
 use:
 
 - search_wikipedia: searches Wikipedia for the given query.
 - retrieve_page: returns the source text of the given Wikipedia page.
 
-Your answers should be grounded in the sources that you consult, which is to
-say:
+Your answers must be grounded in the sources that you consult, which is to say:
+no matter how obvious something is, please perform the queries to verify the
+answer against Wikipedia.
 
-- Positive claims in the answer must be grounded in the sources.
-- Don't ignore relevant information from the sources when composing your
-  answer.
-- Answers should not contradict the sources.
+The user likes really succinct, formal answers, so you should answer the
+question, and nothing but the question.
 
-Rules:
+The basic rules are obvious: answers must be grounded in, and consistent with,
+the sources. Some other more minor rules are:
 
-- Answers should be succinct.
-- You don't have to mention you got your data from Wikipedia.
+- Don't mention Wikipedia in the answer, since the user alredy knows you're
+  sourcing your data from Wikipedia.
 - Where sources list multiple values for some data, only mention the most
   recent value.
-- You should prefer answers from the Wikipedia page text, rather than excerpts
-  in the search results. That is: if the description or excerpt of a search
-  result seems to contain the answer, retrieve the page anyways to ensure
-  you're reading it right.
 """
 
 MODEL: str = "claude-opus-4-7"
