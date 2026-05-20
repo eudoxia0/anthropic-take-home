@@ -1,6 +1,8 @@
+import sys
 from dataclasses import dataclass
 
 import requests
+from dotenv import load_dotenv
 
 
 @dataclass(frozen=True)
@@ -68,7 +70,8 @@ def answer_question(question: str) -> str:
 
 
 def main():
-    print("Hello from anthropic-take-home!")
+    load_dotenv()
+    answer_question(sys.argv[1])
 
 
 if __name__ == "__main__":
