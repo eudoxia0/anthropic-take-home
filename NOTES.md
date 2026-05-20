@@ -12,3 +12,4 @@
   - Not grounded in sources.
     - I'm wrong, it was using more updated information than the infobox.
       - Updated system prompt accordingly.
+- Better reporting so I can interpret logs/QA results.
