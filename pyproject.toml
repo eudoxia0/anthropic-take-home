@@ -3,4 +3,6 @@ name = "anthropic-take-home"
 version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "requests>=2.34.2",
+]
