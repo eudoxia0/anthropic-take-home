@@ -18,3 +18,11 @@
 - made everything async
 - No False Positives: 3/5 The claim about 14 million in the city proper is supported by sources. However, the claim about the Greater Tokyo Area having 'around 37 million' and being 'the world's most populous metropolitan area' is not supported by the retrieved sources, which only mention partial population figures for some cities in the Greater Tokyo Area.
 - Things seem to be going well, model-wise. I have a little over 20m left. Maybe some more tinkering. A few changes I want to trial: force the model to use the tools, deprive the model of excerpts and descriptions so it has to retrieve pages, and make the model more succinct.
+- Thoughts re: evals:
+  - Quantitative evaluation is kind of unnecesary
+    - Binary "Perfect" vs. "Imperfect" is good enough. Or ternary "perfect" vs. "imperfect" vs. "totally wrong". 
+    - Because most of the answers were broadly correct, so the scores mainly helped me to visually flag tiny deviations from intended behaviour.
+- Thoughts re: prompting:
+  - Easy to dismiss
+  - Affects performance
+  - Hard to get Claude to listen to Musts and Must Not's
