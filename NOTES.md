@@ -16,3 +16,4 @@
 - Model is lazy: getting answers from search result description field
 - Models should be aware of the current date.
 - No False Positives: 3/5 The claim about 14 million in the city proper is supported by sources. However, the claim about the Greater Tokyo Area having 'around 37 million' and being 'the world's most populous metropolitan area' is not supported by the retrieved sources, which only mention partial population figures for some cities in the Greater Tokyo Area.
+- Things seem to be going well, model-wise. I have a little over 20m left. Maybe some more tinkering. A few changes I want to trial: force the model to use the tools, deprive the model of excerpts and descriptions so it has to retrieve pages, and make the model more succinct.
