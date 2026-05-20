@@ -48,6 +48,16 @@ def retrieve_page(key: str) -> str:
     return data["source"]
 
 
+SYSTEM_PROMPT: str = """
+You are a question-answering system.
+
+You have two tools at your disposal:
+
+- search_wikipedia: searches Wikipedia for the given query.
+- retrieve_page: returns the source text of the given Wikipedia page.
+"""
+
+
 def main():
     print("Hello from anthropic-take-home!")
 
