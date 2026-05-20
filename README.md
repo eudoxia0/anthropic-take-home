@@ -44,7 +44,7 @@ This section describes the rationale for my design decisions.
 
 ### Architecture
 
-I didn't spend too much time on this. System prompt + tool use. A more complex
+I didn't spend too much time on this and built something minimal. A more complex
 setup (e.g. with a reviewer agent who can approve/reject answers) would be
 harder to test because it would require more complex questions. A tiny design
 decision that was useful was pulling the Wikitext source of the page rather than
@@ -56,7 +56,7 @@ In my experience building LLM harnesses, qualitative evaluation is where most of
 the wins are. This means being able to read transcripts (question + tool calls
 and outputs + answer) comfortably. Reading a multi-line string in a JSON
 document in a log line in a terminal is uncomfortable. So I spent some time
-getting Claude Code to build a system to render results to nicely-formatted
+getting Claude Code to write some code to render results to nicely-formatted
 HTML, so I can read the transcript more effectively.
 
 This was valuable, in particular at seeing where Claude would and would not use
@@ -134,7 +134,7 @@ answers grounded in sources.
 
 But, sometimes the judges would have little nitpicks. These effectively worked
 like false alarms. I asked the model to be more succinct, which reduced the
-surface area for judges to score less than 5/5.
+surface area for judges have minor things to object to.
 
 ### How I Would Extend This
 
