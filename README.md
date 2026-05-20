@@ -37,3 +37,13 @@ uv run eval.py
 This will create an HTML file in the `reports/` directory with the eval results.
 
 [uv]: https://docs.astral.sh/uv/
+
+## Rationale
+
+This section describes the rationale for my design decisions.
+
+### Architecture
+
+I didn't spend too much time on this. System prompt + tool use. A more complex
+setup (e.g. with a reviewer agent who can approve/reject answers) would be
+harder to test because it would require more complex questions.
