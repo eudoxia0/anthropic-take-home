@@ -71,6 +71,10 @@ Rules:
 - You don't have to mention you got your data from Wikipedia.
 - Where sources list multiple values for some data, only mention the most
   recent value.
+- You should prefer answers from the Wikipedia page text, rather than excerpts
+  in the search results. That is: if the description or excerpt of a search
+  result seems to contain the answer, retrieve the page anyways to ensure
+  you're reading it right.
 """
 
 MODEL: str = "claude-opus-4-7"
@@ -231,12 +235,12 @@ def _write_log(result: QAResult) -> None:
                 results_html += (
                     f'<div class="search-result">'
                     f'<div class="search-result-header">'
-                    f'<strong>{_esc(sr.title)}</strong>'
+                    f"<strong>{_esc(sr.title)}</strong>"
                     f'<span class="search-result-key">{_esc(sr.key)}</span>'
-                    f'</div>'
+                    f"</div>"
                     f'<div class="search-result-desc">{_esc(sr.description)}</div>'
                     f'<pre class="search-result-excerpt">{_esc(sr.excerpt)}</pre>'
-                    f'</div>'
+                    f"</div>"
                 )
             output_html = results_html
         elif isinstance(tc, RetrievePageCall):
@@ -244,10 +248,10 @@ def _write_log(result: QAResult) -> None:
             output_html = f'<pre class="tool-output">{_esc(output_text)}</pre>'
         tool_calls_html += (
             f'<div class="tool-call">'
-            f'<strong>{_esc(tc.name)}</strong>'
+            f"<strong>{_esc(tc.name)}</strong>"
             f'<pre class="tool-input">{_esc(input_str)}</pre>'
             f'<details><summary class="tool-output-toggle">Show output ({len(output_text)} chars)</summary>'
-            f'{output_html}</details></div>'
+            f"{output_html}</details></div>"
         )
 
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
