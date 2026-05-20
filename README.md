@@ -84,7 +84,7 @@ model can understand the how better.
 
 This was also simple: an LLM evaluates the transcript along the different
 dimensions of quality. I picked Sonnet on the idea that judging is less
-cognitively demanding than evaluation.
+cognitively demanding than generation.
 
 Claude Code wrote the eval harness, in particular it implemented a 1-5 score
 scale, which I accepted. Part of me thinks this is too much resolution, since in
@@ -134,7 +134,7 @@ answers grounded in sources.
 
 But, sometimes the judges would have little nitpicks. These effectively worked
 like false alarms. I asked the model to be more succinct, which reduced the
-surface area for judges have minor things to object to.
+surface area for judges to have minor things to object to.
 
 ### How I Would Extend This
 
