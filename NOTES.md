@@ -10,3 +10,4 @@
     - Less chance of the model approving its own outputs due to familiarity
 - Noticed an error with this question: What is the current population of Reykjavík according to its Wikipedia article?
   - Not grounded in sources.
+    - I'm wrong, it was using more updated information than the infobox.
