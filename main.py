@@ -58,6 +58,15 @@ You have two tools at your disposal:
 """
 
 
+def answer_question(question: str) -> str:
+    """
+    Entrypoint to the QA system: takes a question, invokes the model to
+    synthesize an answer, optionally querying Wikipedia, and returns the final
+    answer.
+    """
+    raise NotImplementedError()
+
+
 def main():
     print("Hello from anthropic-take-home!")
 
