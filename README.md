@@ -69,6 +69,18 @@ contradictory etc. I try to act like I'm addressing a smart, literate human, who
 wants clear, unambiguous instructions, and not a machine with cheat codes,
 i.e. no "you're a 150IQ genius and if you fail my family dies".
 
+### Evaluation Architecture
+
+This was also simple: an LLM evaluates the transcript along the different
+dimensions of quality. I picked Sonnet on the idea that judging is less
+cognitively demanding than evaluation.
+
+Claude Code wrote the eval harness, in particular it implemented a 1-5 score
+scale, which I accepted. Part of me thinks this is too much resolution, since in
+practice all answers were graded 5/5 or 4/5 when the judge had a nit. But, in
+the context of regression testing, having extra room to go down might be useful,
+so the judges can report severe degradations.
+
 ### Dimensions of Quality
 
 The first dimension that came to mind was **accuracy**, which I broke down into
@@ -85,6 +97,8 @@ to also address **relevance**, i.e. whether the answer actually answers the
 question.
 
 ### Evaluation Lessons
+
+
 
 ### Key Iterations
 
