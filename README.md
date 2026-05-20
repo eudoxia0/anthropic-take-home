@@ -4,7 +4,7 @@ This is the prompt engineering take home!
 
 ## Setup
 
-Install [uv]. Then, create a file `.env` with your anthropic API key:
+Install [uv]. Then, create a file `.env` with your Anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=...
