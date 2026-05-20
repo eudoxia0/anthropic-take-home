@@ -317,11 +317,20 @@ async def run_eval(question: str, index: int, total: int) -> EvalResult:
     return EvalResult(qa=qa, judgment=j)
 
 
+MAX_CONCURRENCY = 2
+
+
 async def main():
     load_dotenv()
 
+    semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
+
+    async def run_with_limit(question, i, total):
+        async with semaphore:
+            return await run_eval(question, i, total)
+
     tasks = [
-        run_eval(question, i, len(EVAL_QUESTIONS))
+        run_with_limit(question, i, len(EVAL_QUESTIONS))
         for i, question in enumerate(EVAL_QUESTIONS)
     ]
     results = await asyncio.gather(*tasks)
