@@ -16,6 +16,9 @@ class SearchResult:
 
 
 def search_wikipedia(query: str) -> list[SearchResult]:
+    """
+    Search Wikipedia for the given query, and return the list of search results.
+    """
     response = requests.get(
         "https://en.wikipedia.org/w/rest.php/v1/search/page",
         params={"q": query, "limit": 10},
