@@ -34,6 +34,6 @@ To run the eval suite, run:
 uv run eval.py
 ```
 
-This will create an HTML file in the `reports/` directory.
+This will create an HTML file in the `reports/` directory with the eval results.
 
 [uv]: https://docs.astral.sh/uv/
