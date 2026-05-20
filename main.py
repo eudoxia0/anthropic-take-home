@@ -66,6 +66,12 @@ You have two tools at your disposal:
 
 - search_wikipedia: searches Wikipedia for the given query.
 - retrieve_page: returns the source text of the given Wikipedia page.
+
+Rules:
+
+- Answers should be succinct.
+- You don't have to mention you got your data from Wikipedia.
+- Where sources list multiple values for some data, only mention the most recent value.
 """
 
 MODEL: str = "claude-opus-4-7"
