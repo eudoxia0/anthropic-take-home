@@ -1,3 +1,4 @@
+import asyncio
 import html
 import json
 import os
@@ -70,7 +71,7 @@ class Judgment:
     raw: dict
 
 
-def judge(qa: QAResult) -> Judgment:
+async def judge(qa: QAResult) -> Judgment:
     tool_call_text = ""
     for tc in qa.tool_calls:
         output = tc.output_text
@@ -89,8 +90,8 @@ def judge(qa: QAResult) -> Judgment:
         f"## Final Answer\n\n{qa.answer}"
     )
 
-    client = anthropic.Anthropic()
-    response = client.messages.create(
+    client = anthropic.AsyncAnthropic()
+    response = await client.messages.create(
         model=JUDGE_MODEL,
         max_tokens=1024,
         system=JUDGE_SYSTEM_PROMPT_TEMPLATE.replace(
@@ -132,12 +133,7 @@ def generate_html(results: list[EvalResult]) -> str:
         ) / 4.0
 
         def _badge(score: int) -> str:
-            if score >= 4:
-                cls = "badge-good"
-            elif score >= 3:
-                cls = "badge-ok"
-            else:
-                cls = "badge-bad"
+            cls = f"badge-{score}"
             return f'<span class="badge {cls}">{score}/5</span>'
 
         tool_calls_html = ""
@@ -238,9 +234,11 @@ def generate_html(results: list[EvalResult]) -> str:
     .cell-avg {{ font-weight: bold; }}
     .answer-preview {{ max-height: 100px; overflow: hidden; text-overflow: ellipsis; }}
     .badge {{ color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; }}
-    .badge-good {{ background: #22c55e; }}
-    .badge-ok {{ background: #eab308; }}
-    .badge-bad {{ background: #ef4444; }}
+    .badge-1 {{ background: #ef4444; }}
+    .badge-2 {{ background: #f97316; }}
+    .badge-3 {{ background: #eab308; }}
+    .badge-4 {{ background: #22c55e; }}
+    .badge-5 {{ background: #0ea5e9; }}
     .detail-row {{ display: none; background: #f9fafb; }}
     .detail-cell {{ padding: 16px; }}
     .detail-heading {{ margin-top: 0; }}
@@ -302,25 +300,31 @@ document.querySelectorAll('tr.clickable').forEach(function(row) {{
 </html>"""
 
 
-def main():
+async def run_eval(question: str, index: int, total: int) -> EvalResult:
+    print(f"[{index + 1}/{total}] {question}")
+
+    print(f"  [{index + 1}] Answering...")
+    qa = await answer_question(question)
+    print(f"  [{index + 1}] Answer: {qa.answer[:100]}...")
+
+    print(f"  [{index + 1}] Judging...")
+    j = await judge(qa)
+    print(
+        f"  [{index + 1}] Scores: FP={j.no_false_positives} FN={j.no_false_negatives} "
+        f"C={j.consistency} R={j.relevance}"
+    )
+
+    return EvalResult(qa=qa, judgment=j)
+
+
+async def main():
     load_dotenv()
 
-    results: list[EvalResult] = []
-    for i, question in enumerate(EVAL_QUESTIONS):
-        print(f"[{i + 1}/{len(EVAL_QUESTIONS)}] {question}")
-
-        print("  Answering...")
-        qa = answer_question(question)
-        print(f"  Answer: {qa.answer[:100]}...")
-
-        print("  Judging...")
-        j = judge(qa)
-        print(
-            f"  Scores: FP={j.no_false_positives} FN={j.no_false_negatives} "
-            f"C={j.consistency} R={j.relevance}"
-        )
-
-        results.append(EvalResult(qa=qa, judgment=j))
+    tasks = [
+        run_eval(question, i, len(EVAL_QUESTIONS))
+        for i, question in enumerate(EVAL_QUESTIONS)
+    ]
+    results = await asyncio.gather(*tasks)
 
     # Write HTML report
     report_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
@@ -330,7 +334,7 @@ def main():
     filename = f"eval_{timestamp}_{rand}.html"
     filepath = os.path.join(report_dir, filename)
 
-    html_content = generate_html(results)
+    html_content = generate_html(list(results))
     with open(filepath, "w") as f:
         f.write(html_content)
 
@@ -338,4 +342,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

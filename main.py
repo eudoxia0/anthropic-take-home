@@ -1,3 +1,4 @@
+import asyncio
 import html
 import json
 import os
@@ -7,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import anthropic
-import requests
+import httpx
 from dotenv import load_dotenv
 
 WIKI_HEADERS = {"User-Agent": "anthropic-take-home/0.1 (QA bot)"}
@@ -21,8 +22,10 @@ class SearchResult:
     description: str
 
 
-def search_wikipedia(query: str) -> list[SearchResult]:
-    response = requests.get(
+async def search_wikipedia(
+    http: httpx.AsyncClient, query: str
+) -> list[SearchResult]:
+    response = await http.get(
         "https://en.wikipedia.org/w/rest.php/v1/search/page",
         params={"q": query, "limit": 10},
         headers=WIKI_HEADERS,
@@ -40,8 +43,8 @@ def search_wikipedia(query: str) -> list[SearchResult]:
     ]
 
 
-def retrieve_page(key: str) -> str:
-    response = requests.get(
+async def retrieve_page(http: httpx.AsyncClient, key: str) -> str:
+    response = await http.get(
         "https://en.wikipedia.org/w/rest.php/v1/page/" + key,
         headers=WIKI_HEADERS,
     )
@@ -166,25 +169,27 @@ class QAResult:
     tool_calls: list[ToolCall] = field(default_factory=list)
 
 
-def _execute_tool(name: str, input: dict) -> tuple[ToolCall, str]:
+async def _execute_tool(
+    http: httpx.AsyncClient, name: str, input: dict
+) -> tuple[ToolCall, str]:
     if name == "search_wikipedia":
-        results = search_wikipedia(input["query"])
+        results = await search_wikipedia(http, input["query"])
         call = SearchCall(query=input["query"], results=results)
         return call, call.output_text
     elif name == "retrieve_page":
-        source = retrieve_page(input["key"])
+        source = await retrieve_page(http, input["key"])
         call = RetrievePageCall(key=input["key"], source=source)
         return call, call.output_text
     else:
         raise ValueError(f"Unknown tool: {name}")
 
 
-def answer_question(question: str) -> QAResult:
-    client = anthropic.Anthropic()
+async def answer_question(question: str) -> QAResult:
+    client = anthropic.AsyncAnthropic()
     messages = [{"role": "user", "content": question}]
     tool_calls: list[ToolCall] = []
 
-    response = client.messages.create(
+    response = await client.messages.create(
         model=MODEL,
         max_tokens=4096,
         system=SYSTEM_PROMPT_TEMPLATE.format(today=_today()),
@@ -192,30 +197,31 @@ def answer_question(question: str) -> QAResult:
         messages=messages,  # type: ignore
     )
 
-    while response.stop_reason == "tool_use":
-        tool_results = []
-        for block in response.content:
-            if block.type == "tool_use":
-                call, output = _execute_tool(block.name, block.input)
-                tool_calls.append(call)
-                tool_results.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": output,
-                    }
-                )
+    async with httpx.AsyncClient() as http:
+        while response.stop_reason == "tool_use":
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    call, output = await _execute_tool(http, block.name, block.input)
+                    tool_calls.append(call)
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": output,
+                        }
+                    )
 
-        messages.append({"role": "assistant", "content": response.content})  # type: ignore
-        messages.append({"role": "user", "content": tool_results})  # type: ignore
+            messages.append({"role": "assistant", "content": response.content})  # type: ignore
+            messages.append({"role": "user", "content": tool_results})  # type: ignore
 
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=4096,
-            system=SYSTEM_PROMPT_TEMPLATE.format(today=_today()),
-            tools=TOOLS,  # type: ignore
-            messages=messages,  # type: ignore
-        )
+            response = await client.messages.create(
+                model=MODEL,
+                max_tokens=4096,
+                system=SYSTEM_PROMPT_TEMPLATE.format(today=_today()),
+                tools=TOOLS,  # type: ignore
+                messages=messages,  # type: ignore
+            )
 
     answer = "".join(block.text for block in response.content if block.type == "text")
     return QAResult(question=question, answer=answer, tool_calls=tool_calls)
@@ -315,12 +321,12 @@ def _write_log(result: QAResult) -> None:
         f.write(page)
 
 
-def main():
+async def main():
     load_dotenv()
-    result = answer_question(sys.argv[1])
+    result = await answer_question(sys.argv[1])
     _write_log(result)
     print(result.answer)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
