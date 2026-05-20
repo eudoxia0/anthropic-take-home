@@ -4,7 +4,7 @@ This is the prompt engineering take home!
 
 ## Setup
 
-Create a file `.env` with:
+Install [uv]. Then, create a file `.env` with your anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=...
@@ -35,3 +35,5 @@ uv run eval.py
 ```
 
 This will create an HTML file in the `reports/` directory.
+
+[uv]: https://docs.astral.sh/uv/
