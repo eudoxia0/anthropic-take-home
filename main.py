@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import requests
+
 
 @dataclass(frozen=True)
 class SearchResult:
@@ -14,7 +16,21 @@ class SearchResult:
 
 
 def search_wikipedia(query: str) -> list[SearchResult]:
-    raise NotImplementedError()
+    response = requests.get(
+        "https://en.wikipedia.org/w/rest.php/v1/search/page",
+        params={"q": query, "limit": 10},
+    )
+    response.raise_for_status()
+    data = response.json()
+    return [
+        SearchResult(
+            key=page["key"],
+            title=page["title"],
+            excerpt=page["excerpt"],
+            description=page.get("description", ""),
+        )
+        for page in data["pages"]
+    ]
 
 
 def main():
