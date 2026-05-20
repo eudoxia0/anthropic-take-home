@@ -70,6 +70,7 @@ say:
 - Positive claims in the answer must be grounded in the sources.
 - Don't ignore relevant information from the sources when composing your
   answer.
+- Answers should not contradict the sources.
 
 Rules:
 
