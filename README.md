@@ -46,7 +46,9 @@ This section describes the rationale for my design decisions.
 
 I didn't spend too much time on this. System prompt + tool use. A more complex
 setup (e.g. with a reviewer agent who can approve/reject answers) would be
-harder to test because it would require more complex questions.
+harder to test because it would require more complex questions. A tiny design
+decision that was useful was pulling the Wikitext source of the page rather than
+the rendered HTML, since this is more compact.
 
 ### Qualitative Evaluation
 
@@ -68,6 +70,15 @@ the harder it is to coordinate it and ensure it's not accidentally repetitive,
 contradictory etc. I try to act like I'm addressing a smart, literate human, who
 wants clear, unambiguous instructions, and not a machine with cheat codes,
 i.e. no "you're a 150IQ genius and if you fail my family dies".
+
+Beyond that, I explained the task to Claude, and showed it the prompt, and asked
+it how it would improve it, on the theory that the models are introspective
+enough that they can describe how they want to be prompted, and what they think
+is ambiguous in the prompt.
+
+I like explaining why in the prompts, partly because you would explain the why
+to a human, and partly because I think by explaining the how and the why, the
+model can understand the how better.
 
 ### Evaluation Architecture
 
@@ -98,7 +109,15 @@ question.
 
 ### Evaluation Lessons
 
+Qualitatively, the main lesson came from scanning the transcripts, seeing where
+Claude was not using the tools, or relying on unexpected output. For example
+sometimes Claude would make a query, and base an answer from the excerpt of a
+Wikipedia search result: I altered the prompt so that it would always retrieve
+the page.
 
+Quantitatively, the scores were mostly helpful in that anything lower than 5/5
+made me review the transcript, and sometimes I'd alter the prompt somewhat in
+response to the judge's output.
 
 ### Key Iterations
 
