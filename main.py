@@ -1,10 +1,14 @@
 import json
+import logging
 import sys
 from dataclasses import dataclass
 
 import anthropic
 import requests
 from dotenv import load_dotenv
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 WIKI_HEADERS = {"User-Agent": "anthropic-take-home/0.1 (QA bot)"}
 
@@ -102,6 +106,7 @@ TOOLS = [
 def _execute_tool(name: str, input: dict) -> str:
     if name == "search_wikipedia":
         results = search_wikipedia(input["query"])
+        logger.info("Search for %r returned: %s", input["query"], [r.title for r in results])
         return json.dumps(
             [
                 {
@@ -114,6 +119,7 @@ def _execute_tool(name: str, input: dict) -> str:
             ]
         )
     elif name == "retrieve_page":
+        logger.info("Retrieving page: %s", input["key"])
         return retrieve_page(input["key"])
     else:
         return json.dumps({"error": f"Unknown tool: {name}"})
