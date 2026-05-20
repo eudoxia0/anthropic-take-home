@@ -88,9 +88,9 @@ cognitively demanding than evaluation.
 
 Claude Code wrote the eval harness, in particular it implemented a 1-5 score
 scale, which I accepted. Part of me thinks this is too much resolution, since in
-practice all answers were graded 5/5 or 4/5 when the judge had a nit. But, in
-the context of regression testing, having extra room to go down might be useful,
-so the judges can report severe degradations.
+practice all answers were graded 5/5 or 4/5 when the judge had a tiny
+comment. But, in the context of regression testing, having extra room to go down
+might be useful, so the judges can report severe degradations.
 
 ### Dimensions of Quality
 
@@ -121,7 +121,46 @@ response to the judge's output.
 
 ### Key Iterations
 
+The architecture and evaluation frameworks mostly didn't change. The main thing
+that changed was the QA prompt.
+
+The initial version of the prompt was very minimal, just to get the system
+going. I then wrote a longer version, with more rules, and found it mostly
+worked, but the model frequently answered from memory, and ignored instructions
+to use its tools. After consulting with Claude, I made the prompt a bit
+stricter, less ambiguous, and explained the rationale for the rules. This
+version of the prompt worked: it pulled data from Wikipedia and generated
+answers grounded in sources.
+
+But, sometimes the judges would have little nitpicks. These effectively worked
+like false alarms. I asked the model to be more succinct, which reduced the
+surface area for judges to score less than 5/5.
+
 ### How I Would Extend This
+
+It's hard to quantitatively evaluate models with a small _n_ sample, and it's
+hard to increase _n_ since it's hard to generate questions which are:
+
+1. Tractable enough that they can be answered from Wikipedia alone, and
+2. Complex enough that the models can get them wrong so we can examine failure
+   modes, and
+3. Are not pathological.
+
+So, I would try to source some more high-quality questions, but _n_ is unlikely
+to be very high.
+
+I would probably narrow the scoring criteria to: perfect, flawed, wrong. This is
+more qualitative, and less quantitative. A `flawed` value means the answer and
+judge comments are worth looking at, and maybe updating the judge's prompt so
+it's more focused. A `wrong` value might be a signal to stop model rollout if
+enough questions are wrong.
+
+I would make a few tiny changes to the eval framework:
+
+- Have each eval criterion answered by a separate LLM call, to make the output
+  more focused.
+- Structure the output so the reasoning is before the score. This is just
+  generally a good practice.
 
 ### AI Usage
 
