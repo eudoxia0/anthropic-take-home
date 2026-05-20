@@ -36,6 +36,13 @@ def search_wikipedia(query: str) -> list[SearchResult]:
     ]
 
 
+def retrieve_page(key: str) -> str:
+    """
+    Retrieve the source text, in Wikitext, of the given Wikipedia page.
+    """
+    raise NotImplementedError()
+
+
 def main():
     print("Hello from anthropic-take-home!")
 
