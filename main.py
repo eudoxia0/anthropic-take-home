@@ -1,14 +1,13 @@
 import json
-import logging
+import os
+import random
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import anthropic
 import requests
 from dotenv import load_dotenv
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 WIKI_HEADERS = {"User-Agent": "anthropic-take-home/0.1 (QA bot)"}
 
@@ -103,11 +102,10 @@ TOOLS = [
 ]
 
 
-def _execute_tool(name: str, input: dict) -> str:
+def _execute_tool(name: str, input: dict, log: list[str]) -> str:
     if name == "search_wikipedia":
         results = search_wikipedia(input["query"])
-        logger.info("Search for %r returned: %s", input["query"], [r.title for r in results])
-        return json.dumps(
+        output = json.dumps(
             [
                 {
                     "key": r.key,
@@ -118,11 +116,37 @@ def _execute_tool(name: str, input: dict) -> str:
                 for r in results
             ]
         )
+        lines = [
+            f"[search_wikipedia] query={input['query']!r}",
+            "",
+            output,
+        ]
+        log.append("\n".join(lines))
+        return output
     elif name == "retrieve_page":
-        logger.info("Retrieving page: %s", input["key"])
-        return retrieve_page(input["key"])
+        result = retrieve_page(input["key"])
+        lines = [
+            f"[retrieve_page] key={input['key']!r}",
+            "",
+            result,
+        ]
+        log.append("\n".join(lines))
+        return result
     else:
         return json.dumps({"error": f"Unknown tool: {name}"})
+
+
+_LOG_SEPARATOR = "\n" + "=" * 72 + "\n\n"
+
+
+def _write_log(log: list[str]) -> None:
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    rand = random.randint(0, 999999)
+    filename = f"{timestamp}_{rand}.txt"
+    with open(os.path.join(log_dir, filename), "w") as f:
+        f.write(_LOG_SEPARATOR.join(log) + "\n")
 
 
 def answer_question(question: str) -> str:
@@ -131,6 +155,7 @@ def answer_question(question: str) -> str:
     synthesize an answer, optionally querying Wikipedia, and returns the final
     answer.
     """
+    log: list[str] = [f"[question]\n\n{question}"]
     client = anthropic.Anthropic()
     messages = [{"role": "user", "content": question}]
 
@@ -148,7 +173,7 @@ def answer_question(question: str) -> str:
         tool_results = []
         for block in response.content:
             if block.type == "tool_use":
-                result = _execute_tool(block.name, block.input)
+                result = _execute_tool(block.name, block.input, log)
                 tool_results.append(
                     {
                         "type": "tool_result",
@@ -170,6 +195,8 @@ def answer_question(question: str) -> str:
 
     # Extract the final text.
     answer = "".join(block.text for block in response.content if block.type == "text")
+    log.append(f"[answer]\n\n{answer}")
+    _write_log(log)
     return answer
 
 
